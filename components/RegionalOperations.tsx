@@ -1,24 +1,36 @@
 'use client';
 import React, { useState, useMemo } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
-import { Search, MapPin } from 'lucide-react';
+import { Search, MapPin, AlertCircle, AlertTriangle, CheckCircle2 } from 'lucide-react';
 
-// ข้อมูลจำลองหน่วยงาน (สามารถดึงจากไฟล์ CSV ที่คุณมีในอนาคต)
+// ข้อมูลจำลอง 12 เขตของ PEA 
 const allUnits = [
-  { id: 1, name: 'กฟภ. นครศรีธรรมราช', region: 'ภาคใต้', overstock: 400, shortage: 240 },
-  { id: 2, name: 'กฟภ. สุราษฎร์ธานี', region: 'ภาคใต้', overstock: 300, shortage: 456 },
-  { id: 3, name: 'กฟภ. สงขลา', region: 'ภาคใต้', overstock: 200, shortage: 139 },
-  { id: 4, name: 'กฟภ. ภูเก็ต', region: 'ภาคใต้', overstock: 278, shortage: 390 },
-  { id: 5, name: 'กฟภ. เชียงใหม่', region: 'ภาคเหนือ', overstock: 150, shortage: 100 },
-  { id: 6, name: 'กฟภ. ขอนแก่น', region: 'ภาคตะวันออกเฉียงเหนือ', overstock: 320, shortage: 180 },
-  { id: 7, name: 'กฟภ. ชลบุรี', region: 'ภาคกลาง', overstock: 500, shortage: 50 },
+  // --- ภาคเหนือ (กฟน.) ---
+  { id: 1, name: 'กฟน.1 (เชียงใหม่)', region: 'ภาคเหนือ', criticalSkus: 0, warningSkus: 2, topShortage: '-', status: 'optimal' },
+  { id: 2, name: 'กฟน.2 (พิษณุโลก)', region: 'ภาคเหนือ', criticalSkus: 0, warningSkus: 5, topShortage: 'ลูกถ้วยฉนวน', status: 'optimal' },
+  { id: 3, name: 'กฟน.3 (ลพบุรี)', region: 'ภาคเหนือ', criticalSkus: 1, warningSkus: 3, topShortage: 'มิเตอร์ 1 เฟส', status: 'warning' },
+
+  // --- ภาคตะวันออกเฉียงเหนือ (กฟฉ.) ---
+  { id: 4, name: 'กฟฉ.1 (อุดรธานี)', region: 'ภาคตะวันออกเฉียงเหนือ', criticalSkus: 0, warningSkus: 4, topShortage: '-', status: 'optimal' },
+  { id: 5, name: 'กฟฉ.2 (อุบลราชธานี)', region: 'ภาคตะวันออกเฉียงเหนือ', criticalSkus: 2, warningSkus: 8, topShortage: 'สายเคเบิล 115kV (รับมือช่วงน้ำหลาก)', status: 'warning' },
+  { id: 6, name: 'กฟฉ.3 (นครราชสีมา)', region: 'ภาคตะวันออกเฉียงเหนือ', criticalSkus: 0, warningSkus: 1, topShortage: '-', status: 'optimal' },
+
+  // --- ภาคกลาง (กฟก.) ---
+  { id: 7, name: 'กฟก.1 (อยุธยา)', region: 'ภาคกลาง', criticalSkus: 0, warningSkus: 2, topShortage: '-', status: 'optimal' },
+  { id: 8, name: 'กฟก.2 (ชลบุรี)', region: 'ภาคกลาง', criticalSkus: 3, warningSkus: 12, topShortage: 'มิเตอร์ TOU (กลุ่ม EV พุ่งสูง)', status: 'warning' },
+  { id: 9, name: 'กฟก.3 (นครปฐม)', region: 'ภาคกลาง', criticalSkus: 0, warningSkus: 3, topShortage: '-', status: 'optimal' },
+
+  // --- ภาคใต้ (กฟต.) ---
+  { id: 10, name: 'กฟต.1 (เพชรบุรี)', region: 'ภาคใต้', criticalSkus: 0, warningSkus: 4, topShortage: '-', status: 'optimal' },
+  { id: 11, name: 'กฟต.2 (นครศรีธรรมราช)', region: 'ภาคใต้', criticalSkus: 7, warningSkus: 15, topShortage: 'หม้อแปลง 50kVA (วิกฤตพายุ)', status: 'critical' },
+  { id: 12, name: 'กฟต.3 (ยะลา)', region: 'ภาคใต้', criticalSkus: 1, warningSkus: 5, topShortage: 'เสาไฟฟ้า 14 ม.', status: 'warning' },
 ];
 
 export default function RegionalOperations() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedRegion, setSelectedRegion] = useState('ทั้งหมด');
 
-  // ระบบกรองข้อมูลตามชื่อและเขต
+  // ระบบกรองข้อมูลตามชื่อและภาค
   const filteredData = useMemo(() => {
     return allUnits.filter(unit => {
       const matchesSearch = unit.name.includes(searchTerm);
@@ -36,8 +48,8 @@ export default function RegionalOperations() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
           <input 
             type="text" 
-            placeholder="ค้นหาชื่อหน่วยงาน (เช่น นครศรีธรรมราช...)" 
-            className="w-full bg-slate-900 border border-slate-700 rounded-lg py-2 pl-10 pr-4 text-sm focus:outline-none focus:border-blue-500 transition-all"
+            placeholder="ค้นหาชื่อเขต (เช่น กฟต.2...)" 
+            className="w-full bg-slate-900 border border-slate-700 rounded-lg py-2 pl-10 pr-4 text-sm focus:outline-none focus:border-blue-500 transition-all text-white"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
@@ -46,24 +58,26 @@ export default function RegionalOperations() {
         <div className="flex items-center gap-2">
           <MapPin className="text-slate-400" size={18} />
           <select 
-            className="w-full bg-slate-900 border border-slate-700 rounded-lg py-2 px-3 text-sm focus:outline-none focus:border-blue-500 transition-all cursor-pointer"
+            className="w-full bg-slate-900 border border-slate-700 rounded-lg py-2 px-3 text-sm focus:outline-none focus:border-blue-500 transition-all cursor-pointer text-white"
             value={selectedRegion}
             onChange={(e) => setSelectedRegion(e.target.value)}
           >
-            <option value="ทั้งหมด">แสดงทุกภูมิภาค</option>
-            <option value="ภาคใต้">ภาคใต้</option>
-            <option value="ภาคเหนือ">ภาคเหนือ</option>
-            <option value="ภาคกลาง">ภาคกลาง</option>
-            <option value="ภาคตะวันออกเฉียงเหนือ">ภาคตะวันออกเฉียงเหนือ</option>
+            <option value="ทั้งหมด">แสดงทุกภูมิภาค (12 เขต)</option>
+            <option value="ภาคเหนือ">ภาคเหนือ (กฟน.1-3)</option>
+            <option value="ภาคตะวันออกเฉียงเหนือ">ภาคตะวันออกเฉียงเหนือ (กฟฉ.1-3)</option>
+            <option value="ภาคกลาง">ภาคกลาง (กฟก.1-3)</option>
+            <option value="ภาคใต้">ภาคใต้ (กฟต.1-3)</option>
           </select>
         </div>
       </div>
 
-      {/* กราฟเปรียบเทียบ (จะเปลี่ยนแปลงตามตัวกรอง) */}
+      {/* กราฟเปรียบเทียบ SKU ที่มีปัญหา */}
       <div className="bg-slate-800 p-6 rounded-xl border border-slate-700 shadow-md">
         <div className="flex justify-between items-center mb-6">
-          <h3 className="text-white font-bold">📊 เปรียบเทียบสถานะพัสดุรายหน่วยงาน ({selectedRegion})</h3>
-          <span className="text-xs text-slate-400">พบทั้งหมด {filteredData.length} หน่วยงาน</span>
+          <h3 className="text-white font-bold flex items-center gap-2">
+            📊 จำนวนรายการพัสดุ (SKU) ที่ต้องเฝ้าระวังรายเขต
+          </h3>
+          <span className="text-xs text-slate-400">พบทั้งหมด {filteredData.length} เขต</span>
         </div>
         
         <div className="h-72 w-full text-xs">
@@ -72,11 +86,14 @@ export default function RegionalOperations() {
               <BarChart data={filteredData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
                 <XAxis dataKey="name" stroke="#94a3b8" tick={{fontSize: 10}} interval={0} angle={-20} textAnchor="end" height={60} />
-                <YAxis stroke="#94a3b8" />
-                <Tooltip contentStyle={{ backgroundColor: '#1e293b', borderColor: '#334155', color: '#fff' }} />
+                <YAxis stroke="#94a3b8" allowDecimals={false} />
+                <Tooltip 
+                  contentStyle={{ backgroundColor: '#1e293b', borderColor: '#334155', color: '#fff' }} 
+                  itemStyle={{ fontSize: '14px' }}
+                />
                 <Legend />
-                <Bar dataKey="overstock" fill="#10b981" name="สต็อกส่วนเกิน" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="shortage" fill="#ef4444" name="สต็อกขาดแคลน" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="warningSkus" fill="#f59e0b" name="พัสดุเฝ้าระวัง (Warning)" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="criticalSkus" fill="#ef4444" name="พัสดุวิกฤต (Critical)" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           ) : (
@@ -88,41 +105,66 @@ export default function RegionalOperations() {
       </div>
 
       {/* ตารางข้อมูลหน่วยงาน */}
-      <div className="bg-slate-800 p-6 rounded-xl border border-slate-700 shadow-md">
-        <h3 className="text-white font-bold mb-4">🔄 รายการหน่วยงานและคำแนะนำเบื้องต้น</h3>
+      <div className="bg-slate-800 p-6 rounded-xl border border-slate-700 shadow-md overflow-hidden">
+        <h3 className="text-white font-bold mb-4">🔄 การวิเคราะห์สถานะและรายการขาดแคลนหลัก (Top Shortage)</h3>
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm text-slate-300">
-            <thead className="bg-slate-700 text-slate-200">
+            <thead className="bg-slate-900 text-slate-400 uppercase text-[10px] tracking-widest">
               <tr>
-                <th className="p-3 rounded-tl-lg">ชื่อหน่วยงาน</th>
-                <th className="p-3">ภูมิภาค</th>
-                <th className="p-3">สถานะสต็อก</th>
-                <th className="p-3">ความเสี่ยงพื้นที่</th>
-                <th className="p-3 rounded-tr-lg">การดำเนินการ</th>
+                <th className="p-4 rounded-tl-lg">ชื่อเขตพื้นที่</th>
+                <th className="p-4 text-center">SKU วิกฤต</th>
+                <th className="p-4">พัสดุขาดแคลนหลัก (AI วิเคราะห์)</th>
+                <th className="p-4 text-center">สถานะพื้นที่</th>
+                <th className="p-4 text-center rounded-tr-lg">จัดการ</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-700">
+            <tbody className="divide-y divide-slate-700/50">
               {filteredData.map((unit) => (
-                <tr key={unit.id} className="hover:bg-slate-700/50 transition-colors">
-                  <td className="p-3 font-medium text-white">{unit.name}</td>
-                  <td className="p-3">{unit.region}</td>
-                  <td className="p-3">
-                    {unit.shortage > unit.overstock ? (
-                      <span className="text-red-400">ขาดแคลน ({unit.shortage})</span>
+                <tr key={unit.id} className="hover:bg-slate-700/40 transition-colors">
+                  <td className="p-4 font-semibold text-white">
+                    {unit.name}
+                    <div className="text-[10px] text-slate-500 font-normal">{unit.region}</div>
+                  </td>
+                  <td className="p-4 text-center">
+                    {unit.criticalSkus > 0 ? (
+                      <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-red-900/50 text-red-400 font-bold border border-red-800">
+                        {unit.criticalSkus}
+                      </span>
                     ) : (
-                      <span className="text-emerald-400">ส่วนเกิน ({unit.overstock})</span>
+                      <span className="text-slate-500">-</span>
                     )}
                   </td>
-                  <td className="p-3">
-                    <span className={`px-2 py-0.5 rounded-full text-[10px] ${
-                      unit.region === 'ภาคใต้' ? 'bg-red-900/50 text-red-400' : 'bg-blue-900/50 text-blue-400'
-                    }`}>
-                      {unit.region === 'ภาคใต้' ? 'เสี่ยงพายุสูง' : 'ปกติ'}
-                    </span>
+                  <td className="p-4">
+                    {unit.topShortage !== '-' ? (
+                      <span className={unit.status === 'critical' ? 'text-red-400 font-medium' : 'text-yellow-400 font-medium'}>
+                        {unit.topShortage}
+                      </span>
+                    ) : (
+                      <span className="text-slate-500">ไม่มีรายการน่ากังวล</span>
+                    )}
                   </td>
-                  <td className="p-3">
-                    <button className="bg-blue-600 hover:bg-blue-500 text-white px-3 py-1 rounded text-xs transition-colors">
-                      ดูรายละเอียด
+                  <td className="p-4">
+                    <div className="flex justify-center">
+                      {unit.status === 'critical' && (
+                        <span className="flex items-center gap-1 bg-red-900/40 text-red-400 border border-red-800/50 px-2 py-1 rounded text-xs font-bold w-max">
+                          <AlertCircle size={14} /> วิกฤต
+                        </span>
+                      )}
+                      {unit.status === 'warning' && (
+                        <span className="flex items-center gap-1 bg-yellow-900/40 text-yellow-400 border border-yellow-800/50 px-2 py-1 rounded text-xs font-bold w-max">
+                          <AlertTriangle size={14} /> เฝ้าระวัง
+                        </span>
+                      )}
+                      {unit.status === 'optimal' && (
+                        <span className="flex items-center gap-1 bg-emerald-900/40 text-emerald-400 border border-emerald-800/50 px-2 py-1 rounded text-xs font-bold w-max">
+                          <CheckCircle2 size={14} /> ปกติ
+                        </span>
+                      )}
+                    </div>
+                  </td>
+                  <td className="p-4 text-center">
+                    <button className="bg-slate-700 hover:bg-blue-600 text-white px-3 py-1.5 rounded text-xs transition-all font-medium">
+                      ดูคลังย่อย
                     </button>
                   </td>
                 </tr>
@@ -130,7 +172,7 @@ export default function RegionalOperations() {
             </tbody>
           </table>
           {filteredData.length === 0 && (
-            <div className="p-8 text-center text-slate-500">ไม่มีข้อมูลหน่วยงาน</div>
+            <div className="p-8 text-center text-slate-500">ไม่มีข้อมูลเขตพื้นที่</div>
           )}
         </div>
       </div>
