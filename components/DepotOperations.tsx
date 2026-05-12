@@ -26,27 +26,27 @@ const peaUnits = [
   { id: 'N1-MJ', name: 'PEA สาขาย่อยแม่แจ่ม', region: 'ภาคเหนือ', type: 'สาขาย่อย' },
   { id: 'N1-JT', name: 'PEA สาขาย่อยจอมทอง', region: 'ภาคเหนือ', type: 'สาขาย่อย' },
 
-  // คลังอื่นๆ จาก Mock เดิมเพื่อใช้เทสกับพายุภาคใต้
+  // คลังอื่นๆ
   { id: 'S1', name: 'PEA จ.นครศรีธรรมราช', region: 'ภาคใต้', type: 'คลังจังหวัด' },
   { id: 'HQ', name: 'กองคลังพัสดุ (ส่วนกลาง)', region: 'กรุงเทพฯ', type: 'คลังหลัก' },
 ];
 
-// ข้อมูลจำลองพัสดุ พร้อมข้อมูลเชิงลึก (AI Details, History & Thresholds)
+// ข้อมูลจำลองพัสดุ พร้อมข้อมูลเชิงลึก (AI Details, History & Thresholds) ครบ 7 รายการ
 const initialEquipment = [
   { 
     id: 1, 
-    name: 'หม้อแปลงไฟฟ้า (Power Transformer)', 
-    current: 61, 
-    currentUnits: 61, 
-    minUnits: 20, 
-    reorderUnits: 50, 
-    maxUnits: 100,
+    name: 'หม้อแปลงไฟฟ้า (Power Transformer 50kVA)', 
+    current: 36, // เปอร์เซ็นต์ความจุ (25/70 ≈ 36%)
+    currentUnits: 25, // ให้ต่ำกว่า Min (30) เพื่อคงสถานะ Critical สีแดง
+    minUnits: 30, 
+    reorderUnits: 43, 
+    maxUnits: 70,
     target: 90, 
     risk: 'เข้าสู่ฤดูพายุ x1.24', 
-    recommendation: 'สั่งซื้อเพิ่ม +89 เครื่อง', 
+    recommendation: 'สั่งซื้อเพิ่ม +45 เครื่อง', 
     status: 'critical',
     aiAnalysis: {
-      summary: 'สถิติย้อนหลัง 5 ปี ชี้ว่าพื้นที่ภาคใต้มีโอกาสเกิดพายุไต้ฝุ่นและน้ำท่วมฉับพลันสูงถึง 85% ในช่วงเดือน พ.ค. - ก.ค. ส่งผลให้หม้อแปลงชำรุดเฉลี่ย 120 เครื่อง/เหตุการณ์',
+      summary: 'สถิติย้อนหลัง 5 ปี ชี้ว่าพื้นที่รับผิดชอบมีโอกาสเกิดพายุและน้ำท่วมฉับพลันสูงถึง 85% ในช่วงเดือน พ.ค. - ก.ค. ส่งผลให้หม้อแปลงชำรุดเฉลี่ย 25-30 เครื่อง/เหตุการณ์',
       factors: [
         { label: 'โอกาสเกิดพายุ (อ้างอิงกรมอุตุฯ)', value: 85, color: 'bg-red-500' },
         { label: 'อัตราการชำรุดจากน้ำท่วม (ย้อนหลัง 3 ปี)', value: 72, color: 'bg-orange-500' },
@@ -54,14 +54,13 @@ const initialEquipment = [
       ]
     },
     history: [
-      { id: 'T01', date: '10 พ.ค. 2026', type: 'เบิกจ่าย', amount: 12, reason: 'เปลี่ยนทดแทนเหตุพายุฤดูร้อน', by: 'ช่างสมชาย' },
+      { id: 'T01', date: '10 พ.ค. 2026', type: 'เบิกจ่าย', amount: 15, reason: 'เปลี่ยนทดแทนเหตุพายุฤดูร้อน (กระจาย 3 จังหวัด)', by: 'ช่างสมชาย' },
       { id: 'T02', date: '05 พ.ค. 2026', type: 'รับเข้า', amount: 30, reason: 'สั่งซื้อรอบปกติ Q2', by: 'คลังส่วนกลาง' },
-      { id: 'T03', date: '01 พ.ค. 2026', type: 'เบิกจ่าย', amount: 5, reason: 'ขยายเขตชุมชนใหม่', by: 'ช่างวิชัย' },
     ]
   },
   { 
     id: 2, 
-    name: 'มิเตอร์อัจฉริยะ (Smart Meter)', 
+    name: 'มิเตอร์อัจฉริยะ (Smart Meter 1-Phase)', 
     current: 72,
     currentUnits: 720, 
     minUnits: 300, 
@@ -80,12 +79,58 @@ const initialEquipment = [
     },
     history: [
       { id: 'M01', date: '09 พ.ค. 2026', type: 'เบิกจ่าย', amount: 45, reason: 'ผู้ใช้ไฟขอเปลี่ยน TOU (กลุ่ม EV)', by: 'ทีมบริการลูกค้า' },
-      { id: 'M02', date: '02 พ.ค. 2026', type: 'เบิกจ่าย', amount: 32, reason: 'โครงการหมู่บ้านจัดสรร', by: 'ผู้รับเหมา A' },
     ]
   },
   { 
     id: 3, 
-    name: 'สายเคเบิล (Low Voltage Cable)', 
+    name: 'ลูกถ้วยฉนวน (Pin Insulator 22kV)', 
+    current: 25,
+    currentUnits: 1250, 
+    minUnits: 1000, 
+    reorderUnits: 2500, 
+    maxUnits: 5000,
+    target: 85, 
+    risk: 'เฝ้าระวังพายุฝนฟ้าคะนอง', 
+    recommendation: 'เร่งโอนย้ายจากคลังข้างเคียง +1,500 หัว', 
+    status: 'critical',
+    aiAnalysis: {
+      summary: 'ลูกถ้วยฉนวนมีแนวโน้มชำรุดสูงจากเหตุฟ้าผ่าและกิ่งไม้พาดสายไฟในช่วงต้นฤดูฝน สต็อกปัจจุบันต่ำกว่าจุดสั่งซื้อ (Reorder Point) คาดว่าจะไม่พอหากเกิดเหตุฉุกเฉินระดับ 3',
+      factors: [
+        { label: 'สถิติฟ้าผ่าในพื้นที่ (เทียบปีก่อน)', value: 80, color: 'bg-red-500' },
+        { label: 'อัตราการเบิกซ่อมฉุกเฉิน', value: 65, color: 'bg-orange-500' },
+      ]
+    },
+    history: [
+      { id: 'I01', date: '11 พ.ค. 2026', type: 'เบิกจ่าย', amount: 300, reason: 'ซ่อมแซมระบบจำหน่ายหลังพายุ', by: 'ช่างกิตติ' },
+      { id: 'I02', date: '01 พ.ค. 2026', type: 'รับเข้า', amount: 500, reason: 'รับจากคลังภาค', by: 'คลังส่วนกลาง' },
+    ]
+  },
+  { 
+    id: 4, 
+    name: 'เสาคอนกรีตอัดแรง (Concrete Pole 12m)', 
+    current: 45,
+    currentUnits: 135, 
+    minUnits: 50, 
+    reorderUnits: 100, 
+    maxUnits: 300,
+    target: 70, 
+    risk: 'โครงการขยายเขตพุ่ง', 
+    recommendation: 'เตรียมเปิด PR สั่งจ้างผลิตเพิ่ม', 
+    status: 'warning',
+    aiAnalysis: {
+      summary: 'AI ตรวจพบคำร้องขอขยายเขตไฟฟ้าเข้าหมู่บ้านจัดสรรใหม่ 3 โครงการในพื้นที่ ซึ่งจะดึงสต็อกเสา 12 เมตรไปใช้กว่า 40% ในเดือนหน้า',
+      factors: [
+        { label: 'ปริมาณงานขยายเขต (Backlog)', value: 75, color: 'bg-orange-500' },
+        { label: 'ข้อจำกัดด้านโลจิสติกส์การขนเสา', value: 60, color: 'bg-yellow-500' },
+      ]
+    },
+    history: [
+      { id: 'P01', date: '08 พ.ค. 2026', type: 'เบิกจ่าย', amount: 40, reason: 'ขยายเขตหมู่บ้านสิริทาวน์', by: 'ผู้รับเหมา B' },
+    ]
+  },
+  { 
+    id: 5, 
+    name: 'สายเคเบิล (Low Voltage PIC Cable)', 
     current: 85,
     currentUnits: 8500, 
     minUnits: 2000, 
@@ -103,9 +148,54 @@ const initialEquipment = [
     },
     history: [
       { id: 'C01', date: '08 พ.ค. 2026', type: 'รับเข้า', amount: 5000, reason: 'รับจากคลังภาค', by: 'คลังส่วนกลาง' },
-      { id: 'C02', date: '05 พ.ค. 2026', type: 'เบิกจ่าย', amount: 800, reason: 'ซ่อมบำรุงตามแผน', by: 'ช่างเอก' },
     ]
   },
+  { 
+    id: 6, 
+    name: 'ฟิวส์แรงสูง (Drop Out Fuse 22kV)', 
+    current: 92,
+    currentUnits: 1840, 
+    minUnits: 300, 
+    reorderUnits: 800, 
+    maxUnits: 2000,
+    target: 80, 
+    risk: 'ปกติ', 
+    recommendation: 'สต็อกเพียงพอ (สามารถแบ่งจ่ายคลังอื่นได้)', 
+    status: 'optimal',
+    aiAnalysis: {
+      summary: 'สต็อกอยู่ในระดับสูงมาก (Overstock เล็กน้อย) หากคลังย่อยในเขตพื้นที่ใกล้เคียงขาดแคลน สามารถทำ Inter-Depot Transfer ได้ทันที',
+      factors: [
+        { label: 'อัตราการใช้งาน', value: 30, color: 'bg-emerald-500' },
+        { label: 'ความพร้อมในการโอนย้าย', value: 95, color: 'bg-blue-500' }
+      ]
+    },
+    history: [
+      { id: 'F01', date: '02 พ.ค. 2026', type: 'รับเข้า', amount: 1000, reason: 'สั่งซื้อประจำปี', by: 'คลังส่วนกลาง' },
+    ]
+  },
+  { 
+    id: 7, 
+    name: 'โคมไฟถนน (LED Street Light 120W)', 
+    current: 35,
+    currentUnits: 175, 
+    minUnits: 100, 
+    reorderUnits: 250, 
+    maxUnits: 500,
+    target: 90, 
+    risk: 'นโยบายเร่งด่วนท้องถิ่น', 
+    recommendation: 'สั่งซื้อเพิ่ม +150 โคม', 
+    status: 'warning',
+    aiAnalysis: {
+      summary: 'มีการแจ้งซ่อมโคมไฟถนนและคำร้องขอติดตั้งใหม่จาก อบต./เทศบาล เพิ่มขึ้น 40% จากนโยบาย Smart City และความปลอดภัยในชุมชน',
+      factors: [
+        { label: 'คำร้องจากหน่วยงานท้องถิ่น', value: 82, color: 'bg-orange-500' },
+        { label: 'อัตราการเสื่อมสภาพของหลอดเดิม', value: 55, color: 'bg-yellow-500' }
+      ]
+    },
+    history: [
+      { id: 'L01', date: '10 พ.ค. 2026', type: 'เบิกจ่าย', amount: 50, reason: 'โครงการถนนปลอดภัย', by: 'เทศบาลตำบล' },
+    ]
+  }
 ];
 
 export default function DepotOperations() {
@@ -172,12 +262,11 @@ export default function DepotOperations() {
                       <span className="text-sm text-white font-medium">{unit.name}</span>
                       <span className="text-[10px] text-slate-400">{unit.region}</span>
                     </div>
-                    {/* เปลี่ยนสี Badge ตามระดับของหน่วยงาน */}
                     <span className={`text-[10px] px-2 py-0.5 rounded font-bold whitespace-nowrap ${
                       unit.type === 'คลังหลัก' || unit.type === 'เขต' ? 'bg-purple-900/50 text-purple-400 border border-purple-800' :
                       unit.type === 'คลังจังหวัด' ? 'bg-blue-900/50 text-blue-400 border border-blue-800' :
                       unit.type === 'สาขา' ? 'bg-emerald-900/50 text-emerald-400 border border-emerald-800' :
-                      'bg-slate-700 text-slate-300 border border-slate-600' // สาขาย่อย
+                      'bg-slate-700 text-slate-300 border border-slate-600'
                     }`}>
                       {unit.type}
                     </span>
@@ -312,7 +401,6 @@ export default function DepotOperations() {
 
                 {/* หลอดแสดงสถานะและเส้นแบ่ง Min/Max/Reorder */}
                 <div className="relative w-full h-4 bg-slate-800 rounded-full overflow-hidden border border-slate-700 mt-2">
-                  {/* สีพื้นหลังของหลอด */}
                   <div 
                     className={`h-full rounded-full transition-all duration-1000 ${
                       selectedEquipDetail.currentUnits <= selectedEquipDetail.minUnits ? 'bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.5)]' : 
@@ -322,17 +410,14 @@ export default function DepotOperations() {
                     style={{ width: `${(selectedEquipDetail.currentUnits / selectedEquipDetail.maxUnits) * 100}%` }}
                   ></div>
                   
-                  {/* เส้น ขีดสีแดง (Min) */}
                   <div 
                     className="absolute top-0 bottom-0 border-l-2 border-red-500 z-10"
                     style={{ left: `${(selectedEquipDetail.minUnits / selectedEquipDetail.maxUnits) * 100}%` }}
                   ></div>
-                  {/* เส้น ขีดสีเหลือง (Reorder) */}
                   <div 
                     className="absolute top-0 bottom-0 border-l-2 border-yellow-400 z-10"
                     style={{ left: `${(selectedEquipDetail.reorderUnits / selectedEquipDetail.maxUnits) * 100}%` }}
                   ></div>
-                  {/* เส้น ขีดสีเขียว (Max) - อยู่ขวาสุดของหลอด */}
                   <div 
                     className="absolute top-0 bottom-0 border-r-2 border-emerald-500 z-10 right-0"
                   ></div>
@@ -390,7 +475,7 @@ export default function DepotOperations() {
                       <div className="mt-4 p-3 bg-red-950/40 border border-red-900/50 rounded-lg flex items-start gap-3">
                         <CloudLightning className="text-red-500 shrink-0 mt-0.5" size={18} />
                         <p className="text-xs text-red-200">
-                          <span className="font-bold text-red-400">คำเตือนภัยพิบัติ:</span> ร่องมรสุมพาดผ่านภาคใต้ตอนบน คาดว่าความต้องการเบิกใช้ฉุกเฉินจะพุ่งสูงใน 48 ชม. ข้างหน้า
+                          <span className="font-bold text-red-400">คำเตือนภัยพิบัติ:</span> ร่องมรสุมพาดผ่าน หรือ มีปัจจัยเสี่ยงสูง คาดว่าความต้องการเบิกใช้ฉุกเฉินจะพุ่งสูงในระยะเวลาอันใกล้
                         </p>
                       </div>
                     )}
