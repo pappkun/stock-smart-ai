@@ -2,7 +2,6 @@
 import React, { useEffect, useState } from 'react';
 import { MapContainer, GeoJSON } from 'react-leaflet';
 import L from 'leaflet';
-// ⚠️ บรรทัดนี้สำคัญมาก! ห้ามลบเด็ดขาด เพราะคือตัวจัดการความสวยงามของแผนที่
 import 'leaflet/dist/leaflet.css'; 
 
 const engToThaiMap: Record<string, string> = {
@@ -49,14 +48,22 @@ const peaRegionMap: Record<string, string> = {
 
 const riskData: Record<string, string> = {
   'นครศรีธรรมราช': 'critical',
-  'ชลบุรี': 'warning',
   'สุราษฎร์ธานี': 'warning',
+  'สงขลา': 'warning',
+  'ภูเก็ต': 'critical',
+  'อุบลราชธานี': 'critical',
+  'อุดรธานี': 'warning',
+  'ขอนแก่น': 'warning',
+  'เชียงใหม่': 'warning',
+  'น่าน': 'critical',
+  'ชลบุรี': 'warning',
+  'ระยอง': 'warning',
+  'พระนครศรีอยุธยา': 'critical',
 };
 
 // ฟังก์ชันดึงชื่อและแปลภาษา
 const getThaiProvinceName = (feature: any) => {
   if (!feature.properties) return '';
-  // เช็คทุกชื่อที่เป็นไปได้ใน GeoJSON หลายๆ แบบ
   const rawName = feature.properties.shapeName || feature.properties.name_th || feature.properties.pro_th || feature.properties.name || '';
   return engToThaiMap[rawName] || rawName;
 };
@@ -97,8 +104,6 @@ export default function RiskMap() {
     fetch('/thailand.json')
       .then(res => res.json())
       .then(data => {
-        // ลอง log ข้อมูลมาดู 1 จังหวัดว่ามันเก็บชื่อในตัวแปรอะไร
-        console.log("ตรวจสอบข้อมูล GeoJSON:", data.features[0].properties);
         setGeoData(data);
       })
       .catch(err => console.error("Error:", err));
@@ -110,14 +115,13 @@ export default function RiskMap() {
     <MapContainer 
       center={[13.5, 100.5]} 
       zoom={5.5} 
-      scrollWheelZoom={false}
-      zoomControl={false} // เอาปุ่ม + - ออกให้ดูสะอาดตา
-      // บังคับความสูงและสีพื้นหลังตรงนี้!
+      scrollWheelZoom={true}
+      zoomControl={true}
       className="w-full h-full min-h-[500px]" 
       style={{ backgroundColor: '#0f172a' }} 
     >
       <GeoJSON 
-        key="thailand-map-layer" // ใส่ key เพื่อให้มันยอมอัปเดตสี
+        key="thailand-map-layer" 
         data={geoData} 
         style={(feature) => getStyle(feature)}
         onEachFeature={(feature, layer) => {
