@@ -51,25 +51,6 @@ export default function NationalOverview() {
           <div className="w-full flex-1 rounded-lg border border-slate-700 overflow-hidden relative shadow-inner bg-[#0f172a]">
             <RiskMap />
           </div>
-          
-          {/* Legend (คำอธิบายสีแผนที่) */}
-          <div className="absolute bottom-8 right-8 bg-slate-900/90 border border-slate-700 p-3 rounded-lg z-[400] text-xs shadow-lg backdrop-blur-sm">
-            <p className="text-slate-300 font-bold mb-2">ระดับความเสี่ยงพัสดุ</p>
-            <div className="space-y-1.5">
-              <div className="flex items-center gap-2">
-                <span className="w-3 h-3 rounded-full bg-[#ef4444] shadow-[0_0_8px_rgba(239,68,68,0.6)]"></span>
-                <span className="text-slate-300">วิกฤต (ขาดแคลน/เกิน)</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="w-3 h-3 rounded-full bg-[#f59e0b] shadow-[0_0_8px_rgba(245,158,11,0.6)]"></span>
-                <span className="text-slate-300">เฝ้าระวัง (ต้องการจัดการ)</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="w-3 h-3 rounded-full bg-[#10b981] shadow-[0_0_8px_rgba(16,185,129,0.6)]"></span>
-                <span className="text-slate-300">ปกติ (เหมาะสม)</span>
-              </div>
-            </div>
-          </div>
         </div>
         
         {/* การแจ้งเตือน (Alerts) */}

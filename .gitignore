@@ -16,6 +16,8 @@
 # next.js
 /.next/
 /out/
+.next-dev.*
+.dist/
 
 # production
 /build
@@ -23,6 +25,8 @@
 # misc
 .DS_Store
 *.pem
+test.pdf
+*.pdf
 
 # debug
 npm-debug.log*

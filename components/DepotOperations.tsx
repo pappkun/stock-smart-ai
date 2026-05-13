@@ -1,9 +1,45 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { exportShortageReport } from './exportPdf';
 import { 
-  Download, Search, Package, CheckCircle2, Clock, MapPin, Building2, ChevronDown,
+  Download, Search, Package, CheckCircle2, MapPin, Building2, ChevronDown,
   BrainCircuit, History, AlertTriangle, CloudLightning, X, ArrowDownRight, ArrowUpRight, BarChart3
 } from 'lucide-react';
+
+type EquipmentFactor = {
+  label: string;
+  value: number;
+  color: string;
+  text?: string;
+};
+
+type EquipmentHistoryEntry = {
+  id: string;
+  date: string;
+  type: string;
+  amount: number;
+  reason: string;
+  by: string;
+};
+
+type EquipmentDetail = {
+  id: number;
+  name: string;
+  current: number;
+  currentUnits: number;
+  minUnits: number;
+  reorderUnits: number;
+  maxUnits: number;
+  target: number;
+  risk: string;
+  recommendation: string;
+  status: 'critical' | 'warning' | 'optimal';
+  aiAnalysis: {
+    summary: string;
+    factors: EquipmentFactor[];
+  };
+  history: EquipmentHistoryEntry[];
+};
 
 // ข้อมูลจำลองหน่วยงาน (รวมโครงสร้าง Hierarchy ของ PEA เชียงใหม่ตามโครงสร้างจริง)
 const peaUnits = [
@@ -32,7 +68,7 @@ const peaUnits = [
 ];
 
 // ข้อมูลจำลองพัสดุ พร้อมข้อมูลเชิงลึก (AI Details, History & Thresholds)
-const initialEquipment = [
+const initialEquipment: EquipmentDetail[] = [
   { 
     id: 1, 
     name: 'หม้อแปลงไฟฟ้า (Power Transformer)', 
@@ -113,7 +149,36 @@ export default function DepotOperations() {
   const [equipSearch, setEquipSearch] = useState('');
   const [selectedUnit, setSelectedUnit] = useState(peaUnits[0]);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const [selectedEquipDetail, setSelectedEquipDetail] = useState<any>(null);
+  const [selectedEquipDetail, setSelectedEquipDetail] = useState<EquipmentDetail | null>(null);
+  const [isExporting, setIsExporting] = useState(false);
+  const [realAiAnalysis, setRealAiAnalysis] = useState<any>(null);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+
+  useEffect(() => {
+    if (selectedEquipDetail) {
+      setRealAiAnalysis(null);
+      setIsAnalyzing(true);
+      fetch('/api/analyze-stock', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          item: selectedEquipDetail,
+          unitName: selectedUnit.name,
+          region: selectedUnit.region
+        })
+      })
+      .then(res => res.json())
+      .then(data => {
+        setRealAiAnalysis(data);
+        setIsAnalyzing(false);
+      })
+      .catch(err => {
+        console.error('AI API Error:', err);
+        setRealAiAnalysis(selectedEquipDetail.aiAnalysis); // fallback
+        setIsAnalyzing(false);
+      });
+    }
+  }, [selectedEquipDetail, selectedUnit]);
 
   const filteredUnits = peaUnits.filter(unit => 
     unit.name.includes(unitSearch) || unit.region.includes(unitSearch)
@@ -189,9 +254,35 @@ export default function DepotOperations() {
         </div>
 
         <div className="flex items-end">
-          <button className="w-full bg-slate-700 hover:bg-slate-600 text-white p-4 rounded-xl border border-slate-600 flex items-center justify-center gap-2 transition-all active:scale-95 shadow-md">
-            <Download size={18} />
-            <span className="text-sm font-bold">ส่งออกรายงาน PDF</span>
+          <button
+            disabled={isExporting}
+            onClick={async () => {
+              setIsExporting(true);
+              try {
+                await exportShortageReport(selectedUnit.name, selectedUnit.region);
+              } catch (err) {
+                console.error('PDF export error:', err);
+              } finally {
+                setIsExporting(false);
+              }
+            }}
+            className={`w-full p-4 rounded-xl border flex items-center justify-center gap-2 transition-all active:scale-95 shadow-md ${
+              isExporting
+                ? 'bg-slate-800 border-slate-700 text-slate-500 cursor-wait'
+                : 'bg-slate-700 hover:bg-blue-600 border-slate-600 text-white'
+            }`}
+          >
+            {isExporting ? (
+              <>
+                <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>
+                <span className="text-sm font-bold">กำลังสร้าง PDF...</span>
+              </>
+            ) : (
+              <>
+                <Download size={18} />
+                <span className="text-sm font-bold">ส่งออกรายงาน PDF</span>
+              </>
+            )}
           </button>
         </div>
       </div>
@@ -367,20 +458,28 @@ export default function DepotOperations() {
                     <BrainCircuit className="text-blue-400" /> เหตุผลและปัจจัยวิเคราะห์จาก AI
                   </h3>
                   
-                  <div className="bg-slate-900/50 p-4 rounded-xl border border-blue-900/50 shadow-inner">
+                  <div className="bg-slate-900/50 p-4 rounded-xl border border-blue-900/50 shadow-inner relative min-h-[200px]">
+                    {isAnalyzing ? (
+                      <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-900/80 rounded-xl backdrop-blur-sm z-10">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mb-4"></div>
+                        <p className="text-sm font-bold text-blue-400 animate-pulse">AI กำลังประมวลผลข้อมูลจริง...</p>
+                        <p className="text-xs text-slate-500 mt-2">วิเคราะห์ปัจจัยความเสี่ยงและประวัติการเบิกจ่าย</p>
+                      </div>
+                    ) : null}
+
                     <p className="text-sm text-slate-300 leading-relaxed mb-4">
-                      {selectedEquipDetail.aiAnalysis.summary}
+                      {realAiAnalysis?.summary || selectedEquipDetail.aiAnalysis.summary}
                     </p>
                     
                     <div className="space-y-4">
-                      {selectedEquipDetail.aiAnalysis.factors.map((factor: any, idx: number) => (
+                      {(realAiAnalysis?.factors || selectedEquipDetail.aiAnalysis.factors).map((factor: EquipmentFactor, idx: number) => (
                         <div key={idx}>
                           <div className="flex justify-between text-xs mb-1">
                             <span className="text-slate-300">{factor.label}</span>
                             <span className="text-white font-bold">{factor.text || `${factor.value}%`}</span>
                           </div>
                           <div className="w-full bg-slate-800 rounded-full h-2 border border-slate-700">
-                            <div className={`h-2 rounded-full ${factor.color}`} style={{ width: `${factor.value}%` }}></div>
+                            <div className={`h-2 rounded-full ${factor.color || 'bg-blue-500'}`} style={{ width: `${factor.value}%` }}></div>
                           </div>
                         </div>
                       ))}
@@ -405,7 +504,7 @@ export default function DepotOperations() {
                   
                   <div className="bg-slate-900/50 border border-slate-700 rounded-xl overflow-hidden shadow-inner">
                     <div className="divide-y divide-slate-700">
-                      {selectedEquipDetail.history.map((tx: any, idx: number) => (
+                      {selectedEquipDetail.history.map((tx: EquipmentHistoryEntry, idx: number) => (
                         <div key={idx} className="p-3 hover:bg-slate-800/80 transition-colors flex items-center justify-between">
                           <div className="flex items-center gap-3">
                             <div className={`p-2 rounded-lg ${tx.type === 'รับเข้า' ? 'bg-emerald-900/50 text-emerald-400' : 'bg-orange-900/50 text-orange-400'}`}>

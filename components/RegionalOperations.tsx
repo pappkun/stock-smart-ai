@@ -2,6 +2,8 @@
 import React, { useState, useMemo } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { Search, MapPin, AlertCircle, AlertTriangle, CheckCircle2 } from 'lucide-react';
+import ForecastingPanel from './ForecastingPanel';
+import ProvinceForecastModal from './ProvinceForecastModal';
 
 // ข้อมูลจำลอง 12 เขตของ PEA 
 const allUnits = [
@@ -29,6 +31,7 @@ const allUnits = [
 export default function RegionalOperations() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedRegion, setSelectedRegion] = useState('ทั้งหมด');
+  const [selectedUnit, setSelectedUnit] = useState<typeof allUnits[number] | null>(null);
 
   // ระบบกรองข้อมูลตามชื่อและภาค
   const filteredData = useMemo(() => {
@@ -104,6 +107,11 @@ export default function RegionalOperations() {
         </div>
       </div>
 
+      {/* ระบบพยากรณ์ความต้องการพัสดุ (AI Forecasting) */}
+      <div className="bg-slate-800 p-6 rounded-xl border border-slate-700 shadow-md">
+        <ForecastingPanel />
+      </div>
+
       {/* ตารางข้อมูลหน่วยงาน */}
       <div className="bg-slate-800 p-6 rounded-xl border border-slate-700 shadow-md overflow-hidden">
         <h3 className="text-white font-bold mb-4">🔄 การวิเคราะห์สถานะและรายการขาดแคลนหลัก (Top Shortage)</h3>
@@ -163,7 +171,10 @@ export default function RegionalOperations() {
                     </div>
                   </td>
                   <td className="p-4 text-center">
-                    <button className="bg-slate-700 hover:bg-blue-600 text-white px-3 py-1.5 rounded text-xs transition-all font-medium">
+                    <button
+                      onClick={() => setSelectedUnit(unit)}
+                      className="bg-slate-700 hover:bg-blue-600 text-white px-3 py-1.5 rounded text-xs transition-all font-medium"
+                    >
                       ดูคลังย่อย
                     </button>
                   </td>
@@ -176,6 +187,11 @@ export default function RegionalOperations() {
           )}
         </div>
       </div>
+
+      {/* Modal: Province Forecast */}
+      {selectedUnit && (
+        <ProvinceForecastModal unit={selectedUnit} onClose={() => setSelectedUnit(null)} />
+      )}
     </div>
   );
 }
